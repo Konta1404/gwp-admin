@@ -41,11 +41,7 @@ const MapOne: React.FC = () => {
     });
 
     return () => {
-      const map = document.getElementById("mapOne");
-      if (map) {
-        map.innerHTML = "";
-      }
-      // mapOne.destroy();
+      mapOne.destroy();
     };
   }, []);
 

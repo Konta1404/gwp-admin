@@ -1,9 +1,9 @@
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getToken } from "./auth";
 
 export const withAuth = (WrappedComponent: React.FC) => {
-    return (props: any) => {
+    return function AuthenticatedComponent(props: Record<string, never>) {
         const [loading, setLoading] = useState(true);
         const router = useRouter();
 
@@ -11,11 +11,11 @@ export const withAuth = (WrappedComponent: React.FC) => {
             const token = getToken();
 
             if (!token) {
-                router.replace("/auth/login");
+                router.replace("/login");
             } else {
                 setLoading(false);
             }
-        }, []);
+        }, [router]);
 
         if (loading) return <p>Loading...</p>;
         return <WrappedComponent {...props} />;

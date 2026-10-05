@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
-const colors = require("tailwindcss/colors");
+import colors from "tailwindcss/colors";
 
 const config: Config = {
   content: [

@@ -1,51 +1,22 @@
-"use server";
-
-import { revalidateTag } from "next/cache";
-import { cookies } from "next/headers";
-import { typeToFlattenedError } from "zod";
-
-interface IActionResponse<T, E> {
-    success: boolean;
-    error: null | typeToFlattenedError<E> | string;
-    data: null | T;
+'use server';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+const schema = z.object({ email: z.string().trim().email(), password: z.string().min(1) });
+export type LoginState = { error?: string };
+export async function logInAction(_previous: LoginState, formData: FormData): Promise<LoginState> {
+  const parsed = schema.safeParse({ email: formData.get('email'), password: formData.get('password') });
+  if (!parsed.success) return { error: 'Enter a valid email and password.' };
+  try {
+    const response = await fetch(`${process.env.API_URL || 'http://localhost:4000/api'}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsed.data), cache: 'no-store', signal: AbortSignal.timeout(10000),
+    });
+    const result = z.object({ status: z.literal('success'), token: z.string().min(1) }).safeParse(await response.json());
+    if (!response.ok || !result.success) return { error: 'Sign-in failed. Check your credentials and retry.' };
+    (await cookies()).set('jwt', result.data.token, {
+      httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 86400,
+    });
+  } catch { return { error: 'Authentication service is unavailable. Please retry.' }; }
+  redirect('/profile');
 }
-
-export const logInAction = async (
-    _prevState: unknown,
-    formData: FormData
-): Promise<IActionResponse<User, loginFormSchemaValues>> => {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
-    const values = { email, password };
-
-    const validateFields = logInFormSchema.safeParse(values);
-
-    if (!validateFields.success) {
-        return {
-            success: false,
-            error: validateFields.error.flatten(),
-            data: null,
-        };
-    }
-
-    const newUserData = await logIn(values as loginFormSchemaValues);
-
-    if (newUserData.status === "success") {
-        cookies().set("jwt", newUserData.token);
-
-        revalidateTag("user");
-
-        return {
-            success: true,
-            error: null,
-            data: newUserData.data.user,
-        };
-    }
-
-    return {
-        success: false,
-        error: newUserData.message,
-        data: null,
-    };
-};

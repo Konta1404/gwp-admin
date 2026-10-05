@@ -11,13 +11,13 @@ export default function RootLayout({
                                    }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loading, setLoading] = useState<boolean>(true);
 
     // const pathname = usePathname();
 
     useEffect(() => {
-        setTimeout(() => setLoading(false), 1000);
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
     }, []);
 
     return (
